@@ -55,7 +55,7 @@ export const Thread = ({ board, threadId, gridViewState }) => {
 
     return (
         <>
-            { gridViewState.showGrid ? <GridViewer board={board} threadId={threadId} onCloseGrid={hideMedia}></GridViewer> : null}
+            {gridViewState.showGrid ? <GridViewer board={board} threadId={threadId} onCloseGrid={hideMedia}></GridViewer> : null}
 
             {imageViewerVisible || videoViewerVisible ? <button onClick={hideMedia}>x</button> : null}
             {videoViewerVisible ? <VideoViewer onImageClick={hideMedia}></VideoViewer> : null}
