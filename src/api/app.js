@@ -3,12 +3,7 @@ const bodyParser = require('body-parser');
 const url = require('url');
 const querystring = require('querystring');
 const fs = require('fs/promises');
-const NodeCache = require("node-cache");
-const { Readable } = require('stream');
 const fss = require('fs');
-const cache = new NodeCache();
-
-
 
 const app = express();
 const port = 3000;
@@ -32,7 +27,6 @@ app.get('/media/video/:media', async (request, response) => {
   const buffer = await mediaResult.arrayBuffer();
   const stringifiedBuffer = Buffer.from(buffer);
 
-  //cache.set('video', buffer);
   fss.writeFile('video.webm', stringifiedBuffer, () => {
     console.log('done');
   });
