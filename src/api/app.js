@@ -1,42 +1,40 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const url = require('url');
-const querystring = require('querystring');
-const fs = require('fs/promises');
-const fss = require('fs');
+const express = require("express");
+const bodyParser = require("body-parser");
+const url = require("url");
+const querystring = require("querystring");
+const fs = require("fs/promises");
+const fss = require("fs");
 
 const app = express();
 const port = 3000;
 
-const CATALOG_URL = 'https://a.4cdn.org/{{BOARD}}/catalog.json';
-const THREAD_URL = 'https://a.4cdn.org/{{BOARD}}/thread/{{THREAD}}.json';
-const THUMBNAIL_URL = 'https://i.4cdn.org/{{BOARD}}/{{THUMBNAIL}}s.jpg';
-const MEDIA_URL = 'https://i.4cdn.org/{{BOARD}}/{{MEDIA}}{{EXT}}';
+const CATALOG_URL = "https://a.4cdn.org/{{BOARD}}/catalog.json";
+const THREAD_URL = "https://a.4cdn.org/{{BOARD}}/thread/{{THREAD}}.json";
+const THUMBNAIL_URL = "https://i.4cdn.org/{{BOARD}}/{{THUMBNAIL}}s.jpg";
+const MEDIA_URL = "https://i.4cdn.org/{{BOARD}}/{{MEDIA}}{{EXT}}";
 //03_thumbnails
 
-app.get('/', (request, response) => {
-  response.send('4Chan');
+app.get("/", (request, response) => {
+  response.send("4Chan");
 });
 
-app.get('/media/video/:media', async (request, response) => {
-
-  const mediaParam = request.params['media'];
+app.get("/media/video/:media", async (request, response) => {
+  const mediaParam = request.params["media"];
   const mediaURL = decodeURIComponent(mediaParam);
 
   const mediaResult = await fetch(mediaURL);
   const buffer = await mediaResult.arrayBuffer();
   const stringifiedBuffer = Buffer.from(buffer);
 
-  fss.writeFile('video.webm', stringifiedBuffer, () => {
-    console.log('done');
+  fss.writeFile("video.webm", stringifiedBuffer, () => {
+    console.log("done");
   });
 
-  console.log(`Video - ${mediaURL}`)
+  console.log(`Video - ${mediaURL}`);
   response.json({ ok: true });
-
 });
 
-app.get('/media/video', (req, res) => {
+app.get("/media/video", (req, res) => {
   const options = {};
   const filePath = "video.webm";
   let start;
@@ -77,101 +75,99 @@ app.get('/media/video', (req, res) => {
       res.statusCode = 200;
       res.setHeader("accept-ranges", "bytes");
       res.setHeader("content-length", contentLength);
-      console.log('NOT Streaming');
+      console.log("NOT Streaming");
       res.end();
-    }
-    else {
+    } else {
       let retrievedLength;
       if (start !== undefined && end !== undefined) {
-        retrievedLength = (end + 1) - start;
-      }
-      else if (start !== undefined) {
+        retrievedLength = end + 1 - start;
+      } else if (start !== undefined) {
         retrievedLength = contentLength - start;
-      }
-      else if (end !== undefined) {
-        retrievedLength = (end + 1);
-      }
-      else {
+      } else if (end !== undefined) {
+        retrievedLength = end + 1;
+      } else {
         retrievedLength = contentLength;
       }
 
       res.statusCode = start !== undefined || end !== undefined ? 206 : 200;
 
       res.setHeader("content-length", retrievedLength);
-      res.setHeader("Content-Type", "video/mp4")
+      res.setHeader("Content-Type", "video/mp4");
 
       if (range !== undefined) {
-        res.setHeader("content-range", `bytes ${start || 0}-${end || (contentLength - 1)}/${contentLength}`);
+        res.setHeader(
+          "content-range",
+          `bytes ${start || 0}-${end || contentLength - 1}/${contentLength}`
+        );
         res.setHeader("accept-ranges", "bytes");
       }
 
       const fileStream = fss.createReadStream(filePath, options);
-      fileStream.on("error", error => {
+      fileStream.on("error", (error) => {
         console.log(`Error reading file ${filePath}.`);
         console.log(error);
         res.sendStatus(500);
       });
-      console.log('streaming');
+      console.log("streaming");
       fileStream.pipe(res);
     }
   });
-
-})
+});
 
 //get image
-app.get('/media/:media', async (request, response) => {
-
-  const mediaParam = request.params['media'];
+app.get("/media/:media", async (request, response) => {
+  const mediaParam = request.params["media"];
   let result = {};
 
   if (mediaParam) {
-
     console.log(mediaParam);
     const mediaURL = decodeURIComponent(mediaParam);
 
     try {
       const mediaResult = await fetch(mediaURL);
       const buffer = await mediaResult.arrayBuffer();
-      const stringifiedBuffer = Buffer.from(buffer).toString('base64');
-      const contentType = mediaResult.headers.get('content-type');
+      const stringifiedBuffer = Buffer.from(buffer).toString("base64");
+      const contentType = mediaResult.headers.get("content-type");
       const imageBase64 = `data:${contentType};base64,${stringifiedBuffer}`;
 
-      result = { media: imageBase64 ?? '' };
+      result = { media: imageBase64 ?? "" };
     } catch (e) {
-      console.log({ s: '/media/:media', e });
+      console.log({ s: "/media/:media", e });
     }
   }
 
-  response.setHeader('Content-Type', 'application/json');
+  response.setHeader("Content-Type", "application/json");
   response.json(result);
-
 });
 
+app.get("/catalog/:board/:page", async (request, response) => {
+  const board = request.params["board"];
+  const page = Number(request.params["page"]);
 
-app.get('/catalog/:board/:page', async (request, response) => {
-
-  const board = request.params['board'];
-  const page = Number(request.params['page']);
-
-  const catalogUrl = CATALOG_URL.replace('{{BOARD}}', board);
+  const catalogUrl = CATALOG_URL.replace("{{BOARD}}", board);
   console.log({ board, page, catalogUrl });
 
-  const catalogResult = await fetch(catalogUrl, { method: 'GET' });
+  const catalogResult = await fetch(catalogUrl, { method: "GET" });
   const catalogObject = await catalogResult.json();
 
-  const threads = catalogObject.find(p => p.page === page).threads;
+  const threads = catalogObject.find((p) => p.page === page).threads;
 
-  threads.map(t => {
-
+  threads.map((t) => {
     if (t.ext) {
+      t.media = MEDIA_URL.replace("{{BOARD}}", board)
+        .replace("{{MEDIA}}", t.tim)
+        .replace("{{EXT}}", t.ext);
 
-      t.media = MEDIA_URL.replace('{{BOARD}}', board).replace('{{MEDIA}}', t.tim).replace('{{EXT}}', t.ext);
-
-      if (t.ext === '.webm') {
-        t.thumbnailUrl = THUMBNAIL_URL.replace('{{BOARD}}', board).replace('{{THUMBNAIL}}', t.tim).replace('{{EXT}}', '.jpg');
+      if (t.ext === ".webm") {
+        t.thumbnailUrl = THUMBNAIL_URL.replace("{{BOARD}}", board)
+          .replace("{{THUMBNAIL}}", t.tim)
+          .replace("{{EXT}}", ".jpg");
         t.isVideo = true;
       } else {
-        t.thumbnailUrl = THUMBNAIL_URL.replace('{{BOARD}}', board).replace('{{THUMBNAIL}}', t.tim);
+        t.thumbnailUrl = THUMBNAIL_URL.replace("{{BOARD}}", board).replace(
+          "{{THUMBNAIL}}",
+          t.tim
+        );
         t.isVideo = false;
       }
 
@@ -181,77 +177,70 @@ app.get('/catalog/:board/:page', async (request, response) => {
     }
 
     return t;
-
   });
 
   const promises = [];
 
-  for (let p of threads.filter(t => t.thumbnailUrl)) {
+  for (let p of threads.filter((t) => t.thumbnailUrl)) {
     promises.push(getThumbnail(p));
   }
 
   await Promise.all(promises);
 
-
-
-  response.setHeader('Content-Type', 'application/json');
+  response.setHeader("Content-Type", "application/json");
   response.json(threads);
-
 });
 
-
-
 const getThumbnail = async (post) => {
-
   const retry = 3;
 
   for (let i = 0; i < retry; i++) {
-
     try {
-
       const thumbnailResult = await fetch(post.thumbnailUrl);
       const buffer = await thumbnailResult.arrayBuffer();
-      const stringifiedBuffer = Buffer.from(buffer).toString('base64');
-      const contentType = thumbnailResult.headers.get('content-type');
+      const stringifiedBuffer = Buffer.from(buffer).toString("base64");
+      const contentType = thumbnailResult.headers.get("content-type");
       const imageBase64 = `data:${contentType};base64,${stringifiedBuffer}`;
 
       post.thumbnail = imageBase64;
 
       break;
-
     } catch (error) {
-      console.log({ url: port.thumbnailUrl }); 
+      console.log({ url: port.thumbnailUrl });
       console.log(error);
     }
-
   }
 };
 
-app.get('/thread/:board/:thread', async (request, response) => {
+app.get("/thread/:board/:thread", async (request, response) => {
+  const board = request.params["board"];
+  const thread = request.params["thread"];
 
-  const board = request.params['board'];
-  const thread = request.params['thread'];
-
-  const threadUrl = THREAD_URL.replace('{{BOARD}}', board).replace('{{THREAD}}', thread);
+  const threadUrl = THREAD_URL.replace("{{BOARD}}", board).replace(
+    "{{THREAD}}",
+    thread
+  );
 
   console.log({ threadUrl });
 
-
-  const threadResult = await fetch(threadUrl, { method: 'GET' });
+  const threadResult = await fetch(threadUrl, { method: "GET" });
   const threadObject = await threadResult.json();
 
-
-  threadObject.posts.map(t => {
-
+  threadObject.posts.map((t) => {
     if (t.ext) {
+      t.media = MEDIA_URL.replace("{{BOARD}}", board)
+        .replace("{{MEDIA}}", t.tim)
+        .replace("{{EXT}}", t.ext);
 
-      t.media = MEDIA_URL.replace('{{BOARD}}', board).replace('{{MEDIA}}', t.tim).replace('{{EXT}}', t.ext);
-
-      if (t.ext === '.webm') {
-        t.thumbnailUrl = THUMBNAIL_URL.replace('{{BOARD}}', board).replace('{{THUMBNAIL}}', t.tim).replace('{{EXT}}', '.jpg');
+      if (t.ext === ".webm") {
+        t.thumbnailUrl = THUMBNAIL_URL.replace("{{BOARD}}", board)
+          .replace("{{THUMBNAIL}}", t.tim)
+          .replace("{{EXT}}", ".jpg");
         t.isVideo = true;
       } else {
-        t.thumbnailUrl = THUMBNAIL_URL.replace('{{BOARD}}', board).replace('{{THUMBNAIL}}', t.tim).replace('{{EXT}}', t.ext);
+        t.thumbnailUrl = THUMBNAIL_URL.replace("{{BOARD}}", board)
+          .replace("{{THUMBNAIL}}", t.tim)
+          .replace("{{EXT}}", t.ext);
         t.isVideo = false;
       }
 
@@ -261,41 +250,37 @@ app.get('/thread/:board/:thread', async (request, response) => {
     }
 
     return t;
-
   });
 
   const promises = [];
 
-  for (let p of threadObject.posts.filter(t => t.thumbnailUrl)) {
+  for (let p of threadObject.posts.filter((t) => t.thumbnailUrl)) {
     promises.push(getThumbnail(p));
   }
 
   await Promise.all(promises);
 
-  response.setHeader('Content-Type', 'application/json');
+  response.setHeader("Content-Type", "application/json");
   response.json(threadObject);
-
-
 });
 
-app.get('/board', async (request, response) => {
-
-  const boardResult = await fetch('https://a.4cdn.org/boards.json');
+app.get("/board", async (request, response) => {
+  const boardResult = await fetch("https://a.4cdn.org/boards.json");
   const boardObject = await boardResult.json();
 
-  response.setHeader('Content-Type', 'application/json');
+  response.setHeader("Content-Type", "application/json");
   response.json(boardObject);
 });
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
   next();
 });
 
-
 app.listen(port, () => {
-
   console.log(`Listening on port ${port}`);
-
 });
