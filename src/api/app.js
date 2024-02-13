@@ -12,7 +12,7 @@ const CATALOG_URL = "https://a.4cdn.org/{{BOARD}}/catalog.json";
 const THREAD_URL = "https://a.4cdn.org/{{BOARD}}/thread/{{THREAD}}.json";
 const THUMBNAIL_URL = "https://i.4cdn.org/{{BOARD}}/{{THUMBNAIL}}s.jpg";
 const MEDIA_URL = "https://i.4cdn.org/{{BOARD}}/{{MEDIA}}{{EXT}}";
-//03_thumbnails
+
 
 app.get("/", (request, response) => {
   response.send("4Chan");
