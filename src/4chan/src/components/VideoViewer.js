@@ -18,8 +18,7 @@ export const VideoViewer = ({ video, onImageClick }) => {
           preload="auto"
           autoPlay
           muted
-          controls
-        ></video>
+          controls></video>
       </div>
     </>
   );

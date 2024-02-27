@@ -31,8 +31,7 @@ export const Threads = ({ board, page, setThreadId, setCurrentState }) => {
               href="#"
               key={t.no}
               className="board-link"
-              onClick={() => onSetThreadId(t.no)}
-            >
+              onClick={() => onSetThreadId(t.no)}>
               <div className="board">
                 <div className="image-board">
                   <img src={t.thumbnail} />

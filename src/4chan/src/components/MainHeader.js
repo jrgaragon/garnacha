@@ -25,8 +25,6 @@ export const MainHeader = ({
         };
       });
 
-      //console.log(options)
-
       setSelectBoard(options);
     };
 
@@ -39,7 +37,7 @@ export const MainHeader = ({
 
   const changePage = (currentPage) => {
     if (currentPage >= 1) {
-      console.log({ currentPage });
+      //console.log({ currentPage });
       setPage(currentPage);
       onPageChange(currentPage);
     }
@@ -47,7 +45,7 @@ export const MainHeader = ({
 
   const showGrid = () => {
     gridViewState.setShowGrid((currentState) => !currentState);
-    console.log(gridViewState.showGrid);
+    // console.log(gridViewState.showGrid);
   };
 
   const changeBoard = (e) => {
@@ -58,48 +56,34 @@ export const MainHeader = ({
   return (
     <>
       <div className="head">
-        <button
-          className="board-back"
-          onClick={onSetCurrentState}
-        >
+        <button className="board-back" onClick={onSetCurrentState}>
           {" "}
           {"<<"}{" "}
         </button>
-        <select
-          className="board-select"
-          onChange={changeBoard}
-        >
+        <select className="board-select" onChange={changeBoard}>
           {selectBoard.map((option) => {
             return (
-              <option
-                id={option.board}
-                key={option.board}
-              >
+              <option id={option.board} key={option.board}>
                 {`/${option.board}/ - ${option.title}`}
               </option>
             );
           })}
         </select>
 
-        <button
-          className="button-main-show-grid"
-          onClick={showGrid}
-        >
+        <button className="button-main-show-grid" onClick={showGrid}>
           {" "}
           {"#"}{" "}
         </button>
         <button
           className="button-main-back"
-          onClick={() => changePage(page - 1)}
-        >
+          onClick={() => changePage(page - 1)}>
           {" "}
           {"<<"}{" "}
         </button>
         <span className="page">{page}</span>
         <button
           className="button-main-next"
-          onClick={() => changePage(page + 1)}
-        >
+          onClick={() => changePage(page + 1)}>
           {" "}
           {">>"}{" "}
         </button>
